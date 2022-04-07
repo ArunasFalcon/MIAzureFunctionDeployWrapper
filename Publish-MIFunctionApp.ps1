@@ -9,7 +9,6 @@ param (
         [string]$FunctionAppName
     ,
     [Parameter(
-        Mandatory=$true,
         ValueFromRemainingArguments=$true,
         Position=1)]
         [string[]]$publishargs
