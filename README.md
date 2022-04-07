@@ -1,5 +1,5 @@
 # MIAzureFunctionDeployWrapper
-Wrapper for Azure function core tools to allow publishing to functions accessing their own storage with managed identity
+Wrapper for Azure function core tools to allow publishing to functions accessing their own storage with managed identity.
 
 Azure functions core tools looks into the function configuration key "AzureWebJobsStorage" and expects a connection string.
 This key isn't there when managed identity is used to access the function storage, see here:
