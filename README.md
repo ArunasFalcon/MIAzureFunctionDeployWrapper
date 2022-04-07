@@ -3,6 +3,7 @@ Wrapper for Azure function core tools to allow publishing to functions accessing
 
 Azure functions core tools looks into the function configuration key "AzureWebJobsStorage" and expects a connection string.
 This key isn't there when managed identity is used to access the function storage, see here:
+
 https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference?tabs=blob#connecting-to-host-storage-with-an-identity-preview
 
 This leads to core tools exiting with an error, see here:
