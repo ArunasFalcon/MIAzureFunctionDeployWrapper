@@ -22,8 +22,11 @@ param (
 
 $ErrorActionPreference = 'Stop'
 
-Import-Module -Name Az.Websites
-Import-Module -Name Az.Storage
+$requiredModules = @(
+    "Az.Websites",
+    "Az.Storage"
+)
+$requiredModules | foreach-object { if (!(get-module $_)) { import-module $_ } }
 
 #fixed strings according to MS docs
 $awjsname = 'AzureWebJobsStorage'
