@@ -9,6 +9,10 @@ param (
         [string]$FunctionAppName
     ,
     [Parameter(
+        Mandatory=$false)]
+        [string]$SlotName
+    ,
+    [Parameter(
         Mandatory=$true,
         Position=1)]
         [ValidateSet("Set","Restore","Full")] #split the script in three parts making the actual core tools call optional
@@ -41,6 +45,11 @@ if (($Mode -eq "Set") -or ($Mode -eq "Full"))
 {
     #retrieve and save original site settings
     $webapp = Get-AzWebApp -Name $FunctionAppName
+    if ($SlotName)
+    {
+        $webapp = Get-AzWebAppSlot -Slot $SlotName -WebApp $webapp
+    }
+    
     $originalsettings = $webapp.SiteConfig.AppSettings
     $originalstring = $originalsettings | Where-Object { $_.Name -like $awjsname } | Select-Object -ExpandProperty Value
     $ENV:MIFUNCTIONAWJS = $originalstring
@@ -71,7 +80,7 @@ if (($Mode -eq "Set") -or ($Mode -eq "Full"))
 
     #set new settings
     Write-Host "Updating web app to allow for core tools publishing"
-    Set-AzWebApp -Name $FunctionAppName -ResourceGroupName $webapp.ResourceGroup -AppSettings $publishsettings
+    if($SlotName) {Set-AzWebAppSlot -Name $FunctionAppName -Slot $SlotName -ResourceGroupName $webapp.ResourceGroup -AppSettings $publishsettings} else {Set-AzWebApp -Name $FunctionAppName -ResourceGroupName $webapp.ResourceGroup -AppSettings $publishsettings}
 
     if ($Mode -eq "Set") { exit 0 }
 }
@@ -79,7 +88,7 @@ if (($Mode -eq "Set") -or ($Mode -eq "Full"))
 if ($Mode -eq "Full")
 {
     #run core tools
-    $publishexpression = "func azure functionapp publish $FunctionAppName $publishargstr"
+    $publishexpression = if($SlotName) {"func azure functionapp publish $FunctionAppName --slot $SlotName $publishargstr"} else {"func azure functionapp publish $FunctionAppName $publishargstr"}
     Write-Host "Running core tools command:"
     Write-Host $publishexpression
     Invoke-Expression -Command $publishexpression
@@ -90,9 +99,14 @@ if (($Mode -eq "Restore") -or ($Mode -eq "Full"))
     #restore original settings
     Write-Host "Resetting web app to original settings"
     $webapp = Get-AzWebApp -Name $FunctionAppName
+    if ($SlotName)
+    {
+        $webapp = Get-AzWebAppSlot -Name $FunctionAppName -Slot $SlotName -ResourceGroupName $webapp.ResourceGroup
+    }
+
     $originalsettings = $webapp.SiteConfig.AppSettings
     $hashedoriginals = @{}
     $originalsettings | Where-Object { $_.Name -ne $awjsname } | ForEach-Object { $hashedoriginals.add($_.Name,$_.Value) }
     if ($ENV:MIFUNCTIONAWJS) { $hashedoriginals.Add($awjsname,$ENV:MIFUNCTIONAWJS) }
-    Set-AzWebApp -Name $FunctionAppName -ResourceGroupName $webapp.ResourceGroup -AppSettings $hashedoriginals
+    if($SlotName) {Set-AzWebAppSlot -Name $FunctionAppName -Slot $SlotName -ResourceGroupName $webapp.ResourceGroup -AppSettings $hashedoriginals} else {Set-AzWebApp -Name $FunctionAppName -ResourceGroupName $webapp.ResourceGroup -AppSettings $hashedoriginals}
 }
